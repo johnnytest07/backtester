@@ -2,7 +2,7 @@ package backtester
 
 class Backtester(
   val strategy: Strategy,
-  val data: List<Pair<String, Double>>,
+  val data: List<Tick>,
   val initialBalance:Double = 100000.0 // Can modify initial amount
 ) {
 
@@ -17,8 +17,8 @@ class Backtester(
 
       val (action, size) = strategy.onTick(position, data.take(index+1), tick)
 
-      val timestamp = tick.first
-      val price = tick.second
+      val timestamp = tick.date
+      val price = tick.price
 
       when (action) {
         Action.BUY -> {
