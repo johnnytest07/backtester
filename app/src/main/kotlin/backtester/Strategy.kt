@@ -8,7 +8,8 @@ data class Tick(
 interface Strategy {
 
   fun onTick(
-    position: Double,
+    balance: Double,
+    position: Int,
     history: List<Tick>,
     tick: Tick
   ): Order

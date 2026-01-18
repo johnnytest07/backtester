@@ -1,34 +1,16 @@
 import backtester.*
-import org.jetbrains.kotlinx.dataframe.*
-import org.jetbrains.kotlinx.dataframe.io.*
-import org.jetbrains.kotlinx.dataframe.api.*
-
-class TestStrategy: Strategy {
-
-  override fun onTick(
-    position: Double,
-    history: List<Tick>,
-    tick: Tick
-  ):Order {
-
-    val order = Order(Action.BUY, 12.0)
-    return order
-  }
-
-}
+import strategies.*
+import kotlin.math.exp
+import kotlin.math.log
+import kotlin.random.Random
 
 fun main() {
-  val df = DataFrame.readCSV("app/src/main/resources/testdata.csv")
 
-  val dataInput: List<Tick> = df.rows().map { row ->
-    Tick(
-      date = row["Date"]!!.toString(),
-      price = row["Close/Last"]!!.toString().drop(1).toDouble(),
-    )
-  }
+  val dataGenerator = DataGenerator("AAPL_5_years.csv")
+  val data = dataGenerator.generateTickData()
 
   val strategy = TestStrategy()
 
-  val client = Backtester(strategy, dataInput)
+  val client = Backtester(strategy, data)
   client.run()
 }

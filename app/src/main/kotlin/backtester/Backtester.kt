@@ -8,22 +8,22 @@ class Backtester(
 
   // Initial variables
   private var balance: Double = initialBalance
-  private var position: Double = 0.0
+  private var position: Int = 0
 
   // Main loop
   fun run() {
 
     for ((index, tick) in data.withIndex()) {
 
-      val (action, size) = strategy.onTick(position, data.take(index+1), tick)
+      var (action, size) = strategy.onTick(balance, position, data.take(index+1), tick)
 
       val timestamp = tick.date
-      val price = tick.price
+      val price = String.format("%.2f", tick.price).toDouble()
 
       when (action) {
         Action.BUY -> {
           if (price*size > balance) {continue} // Handle this error later
-          balance -= price
+          balance -= size*price
           position += size
         }
 
@@ -37,7 +37,11 @@ class Backtester(
       }
     }
 
-    print("Initial balance: ${initialBalance}, Final balance: ${balance}, Remaining positions: ${position}")
-  }
+    val finalLiquidation = balance + position * data.last().price
+
+    println("Initial balance: $initialBalance")
+    println("Final balance: $balance")
+    println("Remaining position: $position")
+    println("Liquidation value: $finalLiquidation")  }
 }
 

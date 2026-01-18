@@ -2,7 +2,7 @@ package backtester
 
 data class Order(
   val action: Action,
-  val size: Double
+  val size: Int
 )
 
 enum class Action {
