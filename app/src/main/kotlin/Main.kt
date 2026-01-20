@@ -1,8 +1,5 @@
 import backtester.*
 import strategies.*
-import kotlin.math.exp
-import kotlin.math.log
-import kotlin.random.Random
 
 fun main() {
 
@@ -12,5 +9,10 @@ fun main() {
   val strategy = TestStrategy()
 
   val client = Backtester(strategy, data)
+
+  val strategy2 = MeanReversionStrategy(120)
+  val client2 = Backtester(strategy2, data)
+
   client.run()
+  client2.run()
 }
