@@ -13,6 +13,7 @@ class MeanReversionStrategy(
   val entryThreshold: Double = 1.0,
   val exitThreshold: Double = 0.5,
   val stopLossThreshold: Double = 3.0,
+  val maxExposure: Int = 5_000,
   val timeBasedExit: Boolean = false
 ) : Strategy {
 
@@ -27,13 +28,13 @@ class MeanReversionStrategy(
 
     val actions = mutableListOf<Order>()
 
-    // Insufficient data
+    // if not enough info break
     if (history.size < windowSize + 1) {
       actions.add(Order(Action.NO_ACTION, 0))
       return actions
     }
 
-    // Estimate OU parameters
+    // OU estimation
     val window = history.takeLast(windowSize)
     val logPrices = window.map { ln(it.price) }
 
@@ -61,37 +62,39 @@ class MeanReversionStrategy(
 
     val z = (ln(tick.price) - mu) / sd
 
-    // Stop-loss
+    // stop loss
     if (position > 0 && z <= -stopLossThreshold) {
       actions.add(Order(Action.SELL_LONG, position))
+      return actions
     }
 
     if (position < 0 && z >= stopLossThreshold) {
       actions.add(Order(Action.SELL_SHORT, abs(position)))
+      return actions
     }
 
-    // Exit logic mean reversion
+    // exit logic
     if (position > 0 && z >= -exitThreshold && z <= 0.0) {
       actions.add(Order(Action.SELL_LONG, position))
+      return actions
     }
 
     if (position < 0 && z <= exitThreshold && z >= 0.0) {
       actions.add(Order(Action.SELL_SHORT, abs(position)))
+      return actions
     }
 
-    // Entry logic
-    if (position == 0) {
-      val size = ((balance * 0.05) / tick.price).toInt()
-
-      if (size > 0 && z <= -entryThreshold) {
+    // entry logic
+    if (z <= -entryThreshold && position >= 0 && position < maxExposure) {
+      val size = calcSize(balance, tick.price, position, maxExposure)
+      if (size > 0)
         actions.add(Order(Action.LONG, size))
-        daysHeld = 0
-      }
+    }
 
-      if (size > 0 && z >= entryThreshold) {
+    if (z >= entryThreshold && position <= 0 && abs(position) < maxExposure) {
+      val size = calcSize(balance, tick.price, abs(position), maxExposure)
+      if (size > 0)
         actions.add(Order(Action.SHORT, size))
-        daysHeld = 0
-      }
     }
 
     // Time-based exit
@@ -105,22 +108,21 @@ class MeanReversionStrategy(
       }
     }
 
-    if (actions.isEmpty()) {
+    if (actions.isEmpty())
       actions.add(Order(Action.NO_ACTION, 0))
-    }
 
     return actions
   }
 
+  // OLS estimator
   private fun estimatePhiOLS(x: List<Double>, y: List<Double>): Double {
-    val n = x.size
     val meanX = x.average()
     val meanY = y.average()
 
     var num = 0.0
     var den = 0.0
 
-    for (i in 0 until n) {
+    for (i in x.indices) {
       val dx = x[i] - meanX
       num += dx * (y[i] - meanY)
       den += dx * dx
@@ -128,5 +130,16 @@ class MeanReversionStrategy(
 
     if (den == 0.0) return Double.NaN
     return num / den
+  }
+
+  private fun calcSize(
+    balance: Double,
+    price: Double,
+    currentExposure: Int,
+    maxExposure: Int
+  ): Int {
+    val base = (balance * 0.05) / price
+    val scale = maxOf(0.0, 1.0 - currentExposure.toDouble() / maxExposure)
+    return (base * scale).toInt()
   }
 }
