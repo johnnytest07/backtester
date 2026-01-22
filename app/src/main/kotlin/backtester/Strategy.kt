@@ -12,6 +12,6 @@ interface Strategy {
     position: Int,
     history: List<Tick>,
     tick: Tick
-  ): Order
+  ): List<Order>
 
 }

@@ -3,87 +3,93 @@ package backtester
 class Backtester(
   val strategy: Strategy,
   val data: List<Tick>,
-  val initialBalance:Double = 100000.0 // Can modify initial amount
+  val initialBalance: Double = 100000.0
 ) {
 
-  // Initial variables
-  private var balance: Double = initialBalance
-  private var longPosition: Int = 0
-  private var shortPosition: Int = 0
-  private var shortEntry = mutableListOf<shorts>()
+  private var cash = initialBalance
+  private var position = 0
+  private val lots = mutableListOf<Lot>()
+  private var realizedPnl = 0.0
 
-  data class shorts(var size: Int, val price: Double):Comparable<shorts> {
-    override fun compareTo(other: shorts): Int = when {
-      this.price != other.price -> this.price compareTo other.price // compareTo() in the infix form
-      this.price != other.price -> this.price compareTo other.price
-      else -> 0
-    }
-  }
-
-  // Main loop
   fun run() {
 
     for ((index, tick) in data.withIndex()) {
 
-      var (action, size) = strategy.onTick(balance, longPosition, data.take(index+1), tick)
+      val actions = strategy.onTick(
+        cash,
+        position,
+        data.take(index + 1),
+        tick
+      )
 
-      val timestamp = tick.date
-      val price = String.format("%.2f", tick.price).toDouble()
+      val price = tick.price
 
-      when (action) {
-        Action.LONG -> {
-          if (price*size > balance) {continue} // Handle insufficient fund later
-          balance -= size*price
-          longPosition += size
+      actions.forEach { (action, size) ->
+        when (action) {
+
+          Action.LONG -> openLot(size, price)
+          Action.SHORT -> openLot(-size, price)
+
+          Action.SELL_LONG -> closeLots(size, price)
+          Action.SELL_SHORT -> closeLots(size, price)
+
+          Action.NO_ACTION -> {}
         }
-
-        Action.SELL_LONG -> {
-          if (longPosition < size) { // If size > actual size owned sell all
-            balance += longPosition*price
-            longPosition = 0
-            continue
-          }
-          balance += size*price
-          longPosition -= size
-        }
-
-        Action.SHORT -> {
-          if (price*size > balance) {continue} // Handle insufficient fund later
-          balance -= size*price
-          shortPosition += size
-          shortEntry.add(shorts(size, price))
-        }
-
-        Action.SELL_SHORT -> {                 // need alteration
-          if (shortPosition <= 0){
-            shortPosition = 0
-            continue
-          }
-          shortEntry.sortDescending()
-          for (position in shortEntry) {
-            if (position.size < shortPosition){ // sufficient positions
-              shortPosition -= position.size
-              balance += size*(tick.price - position.price)
-              shortEntry.remove(position)
-            } else {
-              position.size -= shortPosition
-              shortPosition = 0
-              balance += size*(tick.price - position.price)
-              break
-            }
-          }
-          continue
-        }
-
-        Action.NO_ACTION -> {}
       }
     }
 
-    val finalLiquidation = balance + longPosition * data.last().price
+    val lastPrice = data.last().price
+    val unrealizedPnl = lots.sumOf { it.qty * (lastPrice - it.price) }
+
+    val finalEquity = cash + unrealizedPnl
 
     println("Initial balance: $initialBalance")
-    println("Final balance: $balance")
-    println("Remaining position: $longPosition")
-    println("Liquidation value: $finalLiquidation")  }
-}
+    println("Final cash: $cash")
+    println("Realized PnL: $realizedPnl")
+    println("Unrealized PnL: $unrealizedPnl")
+    println("Final equity: $finalEquity")
+  }
 
+  private fun openLot(qty: Int, price: Double) {
+    if (qty == 0) return
+
+    if (qty > 0) {
+      val cost = qty * price
+      if (cash < cost) return
+      cash -= cost
+    } else {
+      cash += -qty * price
+    }
+
+    lots.add(Lot(qty, price))
+    position += qty
+  }
+
+  private fun closeLots(requested: Int, price: Double) {
+    var remaining = requested
+    val iterator = lots.iterator()
+
+    while (iterator.hasNext() && remaining > 0) {
+      val lot = iterator.next()
+
+      // Only close lots that oppose the request
+      if (lot.qty > 0 && requested < 0) continue
+      if (lot.qty < 0 && requested > 0) continue
+
+      val closeQty = minOf(kotlin.math.abs(lot.qty), remaining)
+      val signedClose = if (lot.qty > 0) closeQty else -closeQty
+
+      // Realized PnL
+      realizedPnl += signedClose * (price - lot.price)
+
+      // Cash movement
+      cash += signedClose * price
+
+      lot.qty -= signedClose
+      position -= signedClose
+      remaining -= closeQty
+
+      if (lot.qty == 0) iterator.remove()
+    }
+  }
+}

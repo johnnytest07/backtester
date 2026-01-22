@@ -7,7 +7,6 @@ fun main() {
   val data = dataGenerator.generateTickData()
 
   val strategy = TestStrategy()
-
   val client = Backtester(strategy, data)
 
   val strategy2 = MeanReversionStrategy(120)

@@ -13,9 +13,9 @@ class TestStrategy: Strategy {
     position: Int,
     history: List<Tick>,
     tick: Tick
-  ):Order {
+  ):List<Order> {
 
-    val random = Random.nextInt(1,3)
+    val random = Random.nextInt(1,5)
     var ret = Order(Action.NO_ACTION, 0)
     when (random) {
       1 -> {
@@ -25,9 +25,16 @@ class TestStrategy: Strategy {
       2 -> {
         ret = Order(Action.SELL_LONG, position)
       }
-      3 -> {}
+      3 -> {
+        val size = (balance / (tick.price * 5)).toInt()
+        ret = Order(Action.LONG, size)
+      }
+      4 -> {
+        ret = Order(Action.SELL_LONG, position)
+      }
+      5 -> {}
     }
 
-    return ret
+    return listOf(ret)
   }
 } // Purely random inputs to test if the program is working

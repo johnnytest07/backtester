@@ -12,3 +12,8 @@ enum class Action {
   SELL_SHORT,
   NO_ACTION,
 }
+
+data class Lot(
+  var qty: Int,          // signed: +long, -short
+  val price: Double     // entry price
+)
