@@ -6,7 +6,9 @@ data class Order(
 )
 
 enum class Action {
-  BUY,
-  SELL,
+  LONG,
+  SELL_LONG,
+  SHORT,
+  SELL_SHORT,
   NO_ACTION,
 }

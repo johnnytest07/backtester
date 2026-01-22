@@ -53,7 +53,7 @@ class MeanReversionStrategy(
     }
 
     // Time-based exit
-    if (daysHeld >= 2*phiHalfLife && timeBasedExit) return Order(Action.SELL, position)
+    if (daysHeld >= 2*phiHalfLife && timeBasedExit) return Order(Action.SELL_LONG, position)
 
     val mu = logPrices.average()
     val deviations = logPrices.map { x -> x - mu }
@@ -65,17 +65,17 @@ class MeanReversionStrategy(
 
     if (currentZ <= -entryThreshold){
       if (position != 0){ // if a position is already held return
-        return if (currentZ <= -stopLossThreshold) Order(Action.SELL, position)
+        return if (currentZ <= -stopLossThreshold) Order(Action.SELL_LONG, position)
         else Order(Action.NO_ACTION,0)
       }
       val size = ((balance*0.05)/tick.price).toInt()              // Buy 5% of capital
       daysHeld = 0                                                // Reset daysHeld
-      return Order(Action.BUY, size)
+      return Order(Action.LONG, size)
     }
 
     if (abs(currentZ) <= exitThreshold){
       if (position == 0) return Order(Action.NO_ACTION, 0)
-      return Order(Action.SELL, position)
+      return Order(Action.SELL_LONG, position)
     }
 
     if (position != 0) daysHeld += 1

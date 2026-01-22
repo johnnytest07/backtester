@@ -20,10 +20,10 @@ class TestStrategy: Strategy {
     when (random) {
       1 -> {
         val size = (balance / (tick.price * 5)).toInt()
-        ret = Order(Action.BUY, size)
+        ret = Order(Action.LONG, size)
       }
       2 -> {
-        ret = Order(Action.SELL, position)
+        ret = Order(Action.SELL_LONG, position)
       }
       3 -> {}
     }
