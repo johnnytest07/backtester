@@ -27,10 +27,10 @@ class TestStrategy: Strategy {
       }
       3 -> {
         val size = (balance / (tick.price * 5)).toInt()
-        ret = Order(Action.LONG, size)
+        ret = Order(Action.SHORT, size)
       }
       4 -> {
-        ret = Order(Action.SELL_LONG, position)
+        ret = Order(Action.SELL_SHORT, position)
       }
       5 -> {}
     }

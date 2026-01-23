@@ -9,13 +9,18 @@ import kotlin.math.sqrt
 class MeanReversionStrategy(
   val windowSize: Int,
   val hlMin: Double = 3.0,
-  val hlMax: Double = 600.0,
+  val hlMaxMultiplier: Double = 2.0,
   val entryThreshold: Double = 1.0,
   val exitThreshold: Double = 0.5,
   val stopLossThreshold: Double = 3.0,
-  val maxExposure: Int = 5_000,
+  val maxExposure: Int = 5000,
   val timeBasedExit: Boolean = false
 ) : Strategy {
+  var hlMax: Double
+
+  init {
+    hlMax = hlMaxMultiplier * windowSize
+  }
 
   private var daysHeld = 0
 

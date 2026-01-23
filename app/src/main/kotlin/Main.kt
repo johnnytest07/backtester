@@ -3,14 +3,14 @@ import strategies.*
 
 fun main() {
 
-  val dataGenerator = DataGenerator("AAPL_5_years.csv")
-  val data = dataGenerator.generateTickData()
+  val dataGenerator = DataGenerator()
+  val dataSet = dataGenerator.generateTickData(5)
 
   val strategy = TestStrategy()
-  val client = Backtester(strategy, data)
+  val client = Backtester(strategy, dataSet)
 
-  val strategy2 = MeanReversionStrategy(120)
-  val client2 = Backtester(strategy2, data)
+  val strategy2 = MeanReversionStrategy(30)
+  val client2 = Backtester(strategy2, dataSet)
 
   client.run()
   client2.run()
