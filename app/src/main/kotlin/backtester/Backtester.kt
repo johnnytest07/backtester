@@ -10,13 +10,14 @@ class Backtester(
 
   private var balance = initialBalance
   private var position = 0
-  private val lots = mutableListOf<Lot>()
 
   private var realizedPnl = 0.0
   private val PnLs = mutableListOf<Double>()
 
   // Prevent infinite leverage
   private var shortProceeds = 0.0
+
+  private val actionLog = mutableListOf<String>()
 
   fun run() {
     for (data in dataSets) {
@@ -40,7 +41,6 @@ class Backtester(
             Action.SELL_LONG -> closeLots(size, price)
             Action.SELL_SHORT -> closeLots(-size, price)
 
-
             Action.NO_ACTION -> {}
           }
         }
@@ -63,10 +63,12 @@ class Backtester(
       // Reset for next dataset
       balance = initialBalance
       position = 0
-      lots.clear()
       realizedPnl = 0.0
       shortProceeds = 0.0
     }
+
+    println("Trade log:")
+    actionLog.forEach{ println(it) }
 
     println("Result:")
     println("Average final PnLs: ${PnLs.average()}")
@@ -79,9 +81,11 @@ class Backtester(
     if (qty > 0){               // Receives a positive quantity for Long
       balance -= qty * price
       position += qty
+      actionLog.add(Action.LONG + "amount: ${qty}")
     } else {                    // Receives a negative quantity for Short
       shortProceeds += -qty * price
       position += qty
+      actionLog.add(Action.SHORT + "amount: ${-qty}")
     }
   }
 
@@ -93,16 +97,19 @@ class Backtester(
     if (qty > 0) {                    // sell long
       balance += qty * price
       position -= qty
+      actionLog.add(Action.SELL_LONG + "amount: ${qty}")
     }
     if (qty < 0) {                    // sell short and receives a negative qty
       val amountChanged = -qty * price
       if (amountChanged < shortProceeds) {
         shortProceeds -= amountChanged
         position -= qty
+        actionLog.add(Action.SELL_SHORT + "amount: ${-qty}")
       } else {
         balance += shortProceeds - amountChanged
         shortProceeds = 0.0
         position -= qty
+        actionLog.add(Action.SELL_SHORT + "amount: ${qty}")
       }
     }
   }

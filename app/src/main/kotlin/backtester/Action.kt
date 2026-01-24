@@ -10,10 +10,9 @@ enum class Action {
   SELL_LONG,
   SHORT,
   SELL_SHORT,
-  NO_ACTION,
-}
+  NO_ACTION;
 
-data class Lot(
-  var qty: Int,          // signed: +long, -short
-  val price: Double     // entry price
-)
+  operator fun plus(str: String): String{
+    return "$this $str"
+  }
+}

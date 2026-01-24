@@ -18,9 +18,6 @@ class TestStrategy: Strategy {
     val random = Random.nextInt(1,5)
     var ret = Order(Action.NO_ACTION, 0)
 
-    if (tick.price == 1000.0){return listOf(Order(Action.SHORT, 1))}
-    if (tick.price == 1100.0){return listOf(Order(Action.SELL_SHORT, 1))}
-
     when (random) {
       1 -> {
         val size = (balance / (tick.price * 5)).toInt()
