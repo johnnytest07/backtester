@@ -47,7 +47,7 @@ class Backtester(
       }
 
       val lastPrice = data.last().price
-      val unrealizedPnl = position * lastPrice
+      val unrealizedPnl = position * lastPrice + shortProceeds
       val finalEquity = balance + unrealizedPnl
 
 //      println("Results:")
@@ -81,7 +81,7 @@ class Backtester(
       position += qty
     } else {                    // Receives a negative quantity for Short
       shortProceeds += -qty * price
-      position -= qty
+      position += qty
     }
   }
 
@@ -95,11 +95,14 @@ class Backtester(
       position -= qty
     }
     if (qty < 0) {                    // sell short and receives a negative qty
-      val amountChanged = qty * price
+      val amountChanged = -qty * price
       if (amountChanged < shortProceeds) {
-        shortProceeds += amountChanged
+        shortProceeds -= amountChanged
+        position -= qty
       } else {
-        balance += shortProceeds + amountChanged
+        balance += shortProceeds - amountChanged
+        shortProceeds = 0.0
+        position -= qty
       }
     }
   }
