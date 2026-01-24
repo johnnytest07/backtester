@@ -37,8 +37,8 @@ class Backtester(
             Action.LONG -> openLot(size, price)
             Action.SHORT -> openLot(-size, price)
 
-            Action.SELL_LONG -> closeLots(size, price, side = +1)
-            Action.SELL_SHORT -> closeLots(size, price, side = -1)
+            Action.SELL_LONG -> closeLots(size, price)
+            Action.SELL_SHORT -> closeLots(-size, price)
 
 
             Action.NO_ACTION -> {}
@@ -76,10 +76,10 @@ class Backtester(
   private fun openLot(qty: Int, price: Double) {
     if (qty == 0){return}
 
-    if (qty > 0){
+    if (qty > 0){               // Receives a positive quantity for Long
       balance -= qty * price
       position += qty
-    } else {
+    } else {                    // Receives a negative quantity for Short
       shortProceeds += -qty * price
       position -= qty
     }
@@ -87,21 +87,19 @@ class Backtester(
 
   private fun closeLots(
     qty: Int,
-    price: Double,
-    side: Int
+    price: Double
   ) {
     if (abs(position) < qty) return // Exit if invalid action
-    if (side == 1) {                    // sell long
+    if (qty > 0) {                    // sell long
       balance += qty * price
       position -= qty
     }
-    if (side == -1) {                   // sell short
-      if (abs(position) < qty) return
-      val amountDeducted = qty * price
-      if (amountDeducted < shortProceeds) {
-        shortProceeds -= amountDeducted
+    if (qty < 0) {                    // sell short and receives a negative qty
+      val amountChanged = qty * price
+      if (amountChanged < shortProceeds) {
+        shortProceeds += amountChanged
       } else {
-        balance += shortProceeds - amountDeducted
+        balance += shortProceeds + amountChanged
       }
     }
   }
